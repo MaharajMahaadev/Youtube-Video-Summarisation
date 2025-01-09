@@ -61,7 +61,7 @@ export function VideoSummaryPage() {
     const newSummary = {
       id: Date.now().toString(),
       url,
-      title: 'Sample Video Title',
+      title: 'Video Summary',
       summary: ytSummary,
       timestamp: Date.now(),
     };
