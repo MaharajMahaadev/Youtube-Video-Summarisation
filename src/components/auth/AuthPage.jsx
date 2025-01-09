@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {  Key, Lock, MoveLeft } from 'lucide-react';
 import { AuthCard } from './AuthCard';
 import { AuthButton } from './AuthButton';
@@ -11,12 +11,12 @@ export function AuthPage() {
   const [authMethod, setAuthMethod] = useState('select');
   const [isSignUp, setIsSignUp] = useState(false);
 
-  const { signInEmailPasswordless, isError, isLoading, isSuccess } = useSignInEmailPasswordless();
+  const { signInEmailPasswordless, isLoading, isSuccess, error } = useSignInEmailPasswordless();
   const {
-    signInEmailPassword,
+    signInEmailPassword, isLoading:isLoadingSignIn, isSuccess:isSuccessSignIn,
   } = useSignInEmailPassword();
   const {
-    signUpEmailPassword
+    signUpEmailPassword, isLoading:isLoadingSignUp, isSuccess:isSuccessSignUp,
   } = useSignUpEmailPassword();
 
 
@@ -24,10 +24,10 @@ export function AuthPage() {
     console.log('Magic link:', email);
 
     await signInEmailPasswordless(email)
-    if(isError){
+    if(error===true){
       alert("Sorry couldn't send link")
     }
-    if(isSuccess){
+    else if(isSuccess===false){
       alert('Magic Link Sent!')
       setAuthMethod('select')
     }
@@ -36,24 +36,22 @@ export function AuthPage() {
   const handlePasswordSubmit = async (email, password) => {
 
     if(isSignUp===false){
-      const {isError, error, isSuccess} = await signInEmailPassword(email, password);
-      if(error || isError){
-        alert('Wrong username or password');
-      }
+      await signInEmailPassword(email, password);
 
-      if(!isSuccess){
-        alert('Verify your email');
+      if(isSuccessSignIn===false){
+        alert('Wrong username or password or unverified email', errorSign);
       }
     }
     if(isSignUp===true){
-      const {isError, isSuccess} =  await signUpEmailPassword(email, password);
+      await signUpEmailPassword(email, password);
 
-      if(isError){
+      if(isSuccessSignUp===true){
         alert('Enter valid information.');
       }
 
-      if(isSuccess){
+      else if(isSuccessSignUp===false){
         alert('Successfully created the account. Verify the email and you can proceed to Login');
+        setAuthMethod('select')
       }
     }
   };
@@ -88,6 +86,8 @@ export function AuthPage() {
           <PasswordForm
             onSubmit={handlePasswordSubmit}
             buttonText={isSignUp ? "Sign Up" : "Sign In"}
+            isLoadingSignIn={isLoadingSignIn}
+            isLoadingSignUp={isLoadingSignUp}
           />
         );
     }

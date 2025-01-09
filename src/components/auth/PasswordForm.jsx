@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
 
-export function PasswordForm({ onSubmit, buttonText, isLoading = false }) {
+export function PasswordForm({ onSubmit, buttonText, isLoadingSignIn, isLoadingSignUp }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +28,7 @@ export function PasswordForm({ onSubmit, buttonText, isLoading = false }) {
                           className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/50 border border-white/20 focus:ring-2 focus:ring-[#FF0000] outline-none"
                           placeholder="you@example.com"
                           required
-                          disabled={isLoading}
+                          disabled={isLoadingSignIn || isLoadingSignUp}
                         />
                       </div>
                     </div>
@@ -44,7 +44,7 @@ export function PasswordForm({ onSubmit, buttonText, isLoading = false }) {
                     className="w-full pl-10 pr-12 py-2 rounded-lg bg-white/50 border border-white/20 focus:ring-2 focus:ring-[#FF0000] outline-none"
                     placeholder="••••••••"
                     required
-                    disabled={isLoading}
+                    disabled={isLoadingSignIn || isLoadingSignUp}
                   />
                   <button
                     type="button"
@@ -57,10 +57,14 @@ export function PasswordForm({ onSubmit, buttonText, isLoading = false }) {
               </div>
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoadingSignIn || isLoadingSignUp}
         className="w-full bg-[#FF0000] text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all duration-300 transform hover:scale-105 disabled:opacity-70 disabled:transform-none h-11 flex items-center justify-center"
       >
-        {isLoading ? (
+        { buttonText==="Sign Up"? isLoadingSignUp ? (
+          <Spinner size="sm" className="mx-auto" />
+        ) : (
+          buttonText
+        ): isLoadingSignIn ? (
           <Spinner size="sm" className="mx-auto" />
         ) : (
           buttonText
