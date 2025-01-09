@@ -34,7 +34,6 @@ export function AuthPage() {
   };
 
   const handlePasswordSubmit = async (email, password) => {
-    console.log('Password login:', email, password);
 
     if(isSignUp===false){
       const {isError, error, isSuccess} = await signInEmailPassword(email, password);

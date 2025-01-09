@@ -13,12 +13,6 @@ export function VideoSummaryPage() {
   const { signOut } = useSignOut();
   const accessToken = useAccessToken();
 
-  useEffect(() => {
-    
-    console.log(accessToken);
-  })
-
-
   const handleVideoSubmit = async (e) => {
     e.preventDefault();
     if (!url.trim()) return;
