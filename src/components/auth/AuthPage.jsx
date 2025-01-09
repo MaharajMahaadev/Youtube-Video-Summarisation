@@ -39,7 +39,7 @@ export function AuthPage() {
       await signInEmailPassword(email, password);
 
       if(isSuccessSignIn===false){
-        alert('Wrong username or password or unverified email', errorSign);
+        alert('Wrong username or password or unverified email');
       }
     }
     if(isSignUp===true){
