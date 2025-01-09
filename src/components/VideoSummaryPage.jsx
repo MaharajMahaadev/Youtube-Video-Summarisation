@@ -13,6 +13,11 @@ export function VideoSummaryPage() {
   const { signOut } = useSignOut();
   const accessToken = useAccessToken();
 
+  useEffect(() => {
+    
+    console.log(accessToken);
+  })
+
 
   const handleVideoSubmit = async (e) => {
     e.preventDefault();
@@ -35,7 +40,7 @@ export function VideoSummaryPage() {
 
       const result = await response.json();
 
-      if(result?.data?.actionName?.message==='Error in summarising the video.'){
+      if(result?.data?.actionName?.message==='AI model failed to run'){
         alert('There was an error in processing, Please try again!');
         return;
       }
@@ -46,6 +51,7 @@ export function VideoSummaryPage() {
       }
 
       else{
+        alert('An Unknow error occured.')
         throw new Error('Unknown error occured');
       }
     } 

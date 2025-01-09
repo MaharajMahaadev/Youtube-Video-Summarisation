@@ -1,20 +1,17 @@
 import { useState } from 'react';
-import { Mail, Key, Lock, MoveLeft, Eye, EyeOff } from 'lucide-react';
+import {  Key, Lock, MoveLeft } from 'lucide-react';
 import { AuthCard } from './AuthCard';
 import { AuthButton } from './AuthButton';
 import { EmailForm } from './EmailForm';
 import { PasswordForm } from './PasswordForm';
-import { useSignInEmailOTP, useSignInEmailPassword, useSignInEmailPasswordless, useSignUpEmailPassword } from '@nhost/react'
+import {  useSignInEmailPassword, useSignInEmailPasswordless, useSignUpEmailPassword } from '@nhost/react'
 import NavBar from '../NavBar';
 
 export function AuthPage() {
   const [authMethod, setAuthMethod] = useState('select');
   const [isSignUp, setIsSignUp] = useState(false);
-  const [ otp, setOtp ] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
-  const { signInEmailOTP, verifyEmailOTP, isLoading, isError } = useSignInEmailOTP()
-  const { signInEmailPasswordless, error } = useSignInEmailPasswordless();
+  const { signInEmailPasswordless, isError, isLoading, isSuccess } = useSignInEmailPasswordless();
   const {
     signInEmailPassword,
   } = useSignInEmailPassword();
@@ -23,42 +20,42 @@ export function AuthPage() {
   } = useSignUpEmailPassword();
 
 
-  const handleOtpSubmit = async (email) => {
-    console.log('OTP login:', email);
-      await signInEmailOTP(email);
-
-    if (isError) {
-      console.error({ error })
-      return
-    }
-    setOtp(true);
-    // Mock implementation
-
-    alert('otp sent')
-  };
-
   const handleMagicSubmit = async (email) => {
     console.log('Magic link:', email);
-    // Mock implementation
-    const { error } = await signInEmailPasswordless(email)
 
-    if (error) {
-      console.error({ error })
-      return
+    await signInEmailPasswordless(email)
+    if(isError){
+      alert("Sorry couldn't send link")
     }
-
-    alert('Magic Link Sent!')
+    if(isSuccess){
+      alert('Magic Link Sent!')
+      setAuthMethod('select')
+    }
   };
 
   const handlePasswordSubmit = async (email, password) => {
     console.log('Password login:', email, password);
-    // Mock implementation
+
     if(isSignUp===false){
-      await signInEmailPassword(email, password);
+      const {isError, error, isSuccess} = await signInEmailPassword(email, password);
+      if(error || isError){
+        alert('Wrong username or password');
+      }
+
+      if(!isSuccess){
+        alert('Verify your email');
+      }
     }
     if(isSignUp===true){
-      console.log("hey");
-      await signUpEmailPassword(email, password);
+      const {isError, isSuccess} =  await signUpEmailPassword(email, password);
+
+      if(isError){
+        alert('Enter valid information.');
+      }
+
+      if(isSuccess){
+        alert('Successfully created the account. Verify the email and you can proceed to Login');
+      }
     }
   };
 
@@ -67,11 +64,6 @@ export function AuthPage() {
       case 'select':
         return (
           <div className="space-y-4">
-            <AuthButton
-              icon={Mail}
-              label="Continue with OTP"
-              onClick={() => setAuthMethod('otp')}
-            />
             <AuthButton
               icon={Key}
               label="Continue with Magic Link"
@@ -84,18 +76,12 @@ export function AuthPage() {
             />
           </div>
         );
-      case 'otp':
-        return (
-          <EmailForm
-            onSubmit={handleOtpSubmit}
-            buttonText="Send OTP"
-          />
-        );
       case 'magic':
         return (
           <EmailForm
             onSubmit={handleMagicSubmit}
             buttonText="Send Magic Link"
+            isLoading={isLoading}
           />
         );
       case 'password':
@@ -108,47 +94,6 @@ export function AuthPage() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (password.trim()) {
-      await verifyEmailOTP(password);
-    }
-    setOtp(false);
-  };
-
-  const renderOtpContent = () => {
-    return(
-      <form onSubmit={handleSubmit} className="space-y-4">
-              <label className="block text-sm font-medium text-[#282828] mb-1">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-[#282828]/40" size={20} />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    className="w-full pl-10 pr-12 py-2 rounded-lg bg-white/50 border border-white/20 focus:ring-2 focus:ring-[#FF0000] outline-none"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#282828]/40 hover:text-[#282828]/60"
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-[#FF0000] text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all duration-300 transform hover:scale-105 disabled:opacity-70 disabled:transform-none h-11 flex items-center justify-center"
-              >
-              {isLoading ? (
-                <Spinner size="sm" className="mx-auto" />
-              ) : (
-                'Submit Otp'
-              )}
-            </button>
-          </form>
-    )
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
@@ -166,7 +111,7 @@ export function AuthPage() {
             <MoveLeft />
           </button>
         )}
-        {otp===true?renderOtpContent():renderAuthContent()}
+        {renderAuthContent()}
         <div className="mt-6 text-center">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
