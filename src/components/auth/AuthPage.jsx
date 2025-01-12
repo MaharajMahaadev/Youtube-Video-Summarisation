@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {  Key, Lock, MoveLeft } from 'lucide-react';
 import { AuthCard } from './AuthCard';
 import { AuthButton } from './AuthButton';
@@ -11,24 +11,24 @@ export function AuthPage() {
   const [authMethod, setAuthMethod] = useState('select');
   const [isSignUp, setIsSignUp] = useState(false);
 
-  const { signInEmailPasswordless, isLoading, isSuccess, error } = useSignInEmailPasswordless();
+  const { signInEmailPasswordless, isLoading } = useSignInEmailPasswordless();
   const {
-    signInEmailPassword, isLoading:isLoadingSignIn, isSuccess:isSuccessSignIn,
+    signInEmailPassword, isLoading:isLoadingSignIn, 
   } = useSignInEmailPassword();
   const {
-    signUpEmailPassword, isLoading:isLoadingSignUp, isSuccess:isSuccessSignUp,
+    signUpEmailPassword, isLoading:isLoadingSignUp
   } = useSignUpEmailPassword();
 
 
   const handleMagicSubmit = async (email) => {
     console.log('Magic link:', email);
 
-    await signInEmailPasswordless(email)
-    if(error===true){
-      alert("Sorry couldn't send link")
+    const {isSuccess, error } = await signInEmailPasswordless(email)
+    if(isSuccess===false){
+      alert("Sorry couldn't send link." + error?.message);
     }
-    else if(isSuccess===false){
-      alert('Magic Link Sent!')
+    else if(isSuccess===true){
+      alert('Magic Link Sent to your email!')
       setAuthMethod('select')
     }
   };
@@ -36,20 +36,22 @@ export function AuthPage() {
   const handlePasswordSubmit = async (email, password) => {
 
     if(isSignUp===false){
-      await signInEmailPassword(email, password);
+      const { isSuccess, error} = await signInEmailPassword(email, password);
 
-      if(isSuccessSignIn===false){
-        alert('Wrong username or password or unverified email');
+      if(isSuccess===false){
+        alert(error?.message);
+        console.log(error);
       }
     }
     if(isSignUp===true){
-      await signUpEmailPassword(email, password);
+      const {isSuccess, error} = await signUpEmailPassword(email, password);
 
-      if(isSuccessSignUp===true){
-        alert('Enter valid information.');
+      if(isSuccess===true){
+        alert(error?.message);
+        console.log(error);
       }
 
-      else if(isSuccessSignUp===false){
+      else if(isSuccess===false){
         alert('Successfully created the account. Verify the email and you can proceed to Login');
         setAuthMethod('select')
       }
