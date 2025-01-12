@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { History, LogOut, Youtube, Send, X } from 'lucide-react';
 import { Spinner } from './ui/Spinner.jsx';
-import { useAccessToken, useSignOut } from '@nhost/react';
+import { useAccessToken, useSignOut, useUserId } from '@nhost/react';
 
 export function VideoSummaryPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,6 +12,38 @@ export function VideoSummaryPage() {
   const [url, setUrl] = useState('');
   const { signOut } = useSignOut();
   const accessToken = useAccessToken();
+  const userId = useUserId();
+
+  async function insertSummaries(){
+    try{
+      const res = await fetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/api/rest/summaries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-hasura-role': 'user',
+          'authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          "object":{
+              "summary": ytSummary,
+              "url": url,
+              "timestamp": new Date(new Date().getTime() + 5.5 * 60 * 60 * 1000).toISOString().replace('Z', '000'),
+              "user_id": userId,
+          }
+        })
+      });
+
+      const data = await res.json();
+      
+      setSummaries(prev => [data?.insert_summaries_one, ...prev]);
+      setCurrentSummary(data?.insert_summaries_one);
+      setUrl('');
+    }
+
+    catch(err){
+      console.log('Error in inserting summaries to database', err);
+    }
+  }
 
   const handleVideoSubmit = async (e) => {
     e.preventDefault();
@@ -54,23 +86,34 @@ export function VideoSummaryPage() {
     }
     finally {
       setIsLoading(false);
+      insertSummaries();
     }
   };
 
+  async function getSummaries(){
+    if(summaries.length===0){
+      try{
+      const res = await fetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/api/rest/summaries', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-hasura-role': 'user',
+          'authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      const data = await res.json();
+      setSummaries(data?.summaries);
+    }
+    catch(err){
+      console.log("Error in fetching user summaries: ", err);
+    }
+    }
+    }
+
   useEffect(() => {
-    const newSummary = {
-      id: Date.now().toString(),
-      url,
-      title: 'Video Summary',
-      summary: ytSummary,
-      timestamp: Date.now(),
-    };
-    setSummaries(prev => [newSummary, ...prev]);
-    setCurrentSummary(newSummary);
-    setUrl('');
-    setIsLoading(false);
-    console.log(ytSummary);
-  }, [ytSummary]);
+    getSummaries();
+  }, [isSidebarOpen]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
@@ -161,17 +204,17 @@ export function VideoSummaryPage() {
         <div className="overflow-y-auto h-[calc(100vh-64px)]">
           {summaries.map((summary) => (
             <button
-              key={summary.id}
+              key={summary?.id}
               onClick={() => {
                 setCurrentSummary(summary);
                 setIsSidebarOpen(false);
               }}
               className="w-full p-4 text-left hover:bg-white/30 border-b border-white/20 transition-colors"
             >
-              <h3 className="font-medium text-[#282828] truncate">{summary.title}</h3>
-              <p className="text-sm text-[#282828]/70 mt-1 line-clamp-2">{summary.summary}</p>
+              <h3 className="font-medium text-[#282828] truncate">Link: {summary?.url.slice(-11)}</h3>
+              <p className="text-sm text-[#282828]/70 mt-1 line-clamp-2">{summary?.summary.slice(0,100)}</p>
               <span className="text-xs text-[#282828]/50 mt-2 block">
-                {new Date(summary.timestamp).toLocaleDateString()}
+                {new Date(summary?.timestamp).toLocaleString('in')}
               </span>
             </button>
           ))}
