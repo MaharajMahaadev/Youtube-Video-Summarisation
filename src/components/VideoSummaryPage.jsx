@@ -86,9 +86,12 @@ export function VideoSummaryPage() {
     }
     finally {
       setIsLoading(false);
-      insertSummaries();
     }
   };
+
+  useEffect(() => {
+    insertSummaries();
+  }, [ytSummary]);
 
   async function getSummaries(){
     if(summaries.length===0){
