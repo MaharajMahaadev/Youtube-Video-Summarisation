@@ -10,7 +10,12 @@ export function PasswordForm({ onSubmit, buttonText, isLoadingSignIn, isLoadingS
   const handleSubmit = (e) => {
     e.preventDefault();
     if (email.trim() && password.trim()) {
-      onSubmit(email, password);
+      if(password.length>2 && password.length<21){
+        onSubmit(email, password);
+      }
+      else{
+        alert("Password should be 3 - 20 characters");
+      }
     }
   };
 
