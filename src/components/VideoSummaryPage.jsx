@@ -90,7 +90,9 @@ export function VideoSummaryPage() {
   };
 
   useEffect(() => {
-    insertSummaries();
+    if(ytSummary!==''){
+      insertSummaries();
+    }
   }, [ytSummary]);
 
   async function getSummaries(){
