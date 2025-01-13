@@ -3,7 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { HomePage } from './components/HomePage';
 import { AuthPage } from './components/auth/AuthPage.jsx';
 import { VideoSummaryPage } from './components/VideoSummaryPage.jsx';
-import { NhostProvider } from '@nhost/react';
+import { ResetPassword } from './components/auth/ResetPassword.jsx'
+import { NhostProvider, SignedIn } from '@nhost/react';
 import { nhost } from './lib/host.ts'
 import { NhostApolloProvider } from '@nhost/react-apollo';
 
@@ -34,6 +35,11 @@ export default function App() {
           !session ? 
             <Navigate to="/auth" replace /> : 
             <VideoSummaryPage />
+        } />
+        <Route path="/reset" element={
+          <SignedIn>
+            <ResetPassword />
+          </SignedIn>
         } />
       </Routes>
     </BrowserRouter>

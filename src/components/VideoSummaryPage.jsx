@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { History, LogOut, Youtube, Send, X } from 'lucide-react';
 import { Spinner } from './ui/Spinner.jsx';
-import { useAccessToken, useSignOut, useUserId } from '@nhost/react';
+import { SignedIn, useAccessToken, useSignOut, useUserId } from '@nhost/react';
 
 export function VideoSummaryPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -121,6 +121,7 @@ export function VideoSummaryPage() {
   }, [isSidebarOpen]);
 
   return (
+    <SignedIn>
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
       <nav className="glass fixed w-full z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -226,5 +227,6 @@ export function VideoSummaryPage() {
         </div>
       </div>
     </div>
+    </SignedIn>
   );
 }

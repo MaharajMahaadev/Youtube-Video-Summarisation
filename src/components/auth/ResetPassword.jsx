@@ -1,17 +1,35 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Lock, Eye, EyeOff } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
+import NavBar from '../NavBar.jsx'
+import { useChangePassword } from '@nhost/react';
+import { useNavigate } from 'react-router-dom';
 
-export function PasswordForm({ onSubmit, buttonText, isLoadingSignIn, isLoadingSignUp, setAuthMethod }) {
-  const [email, setEmail] = useState('');
+export function ResetPassword() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const { changePassword, isLoading } = useChangePassword();
 
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (email.trim() && password.trim()) {
+    if (password.trim()) {
       if(password.length>2 && password.length<21){
-        onSubmit(email, password);
+        const {isSuccess, error} = await changePassword(password);
+
+        if(isSuccess===true){
+          alert("Password sucessfully changed");
+          navigate('/dashboard');
+        }
+        else if(isSuccess===false){
+          if(error!==null){
+            alert('Error: '+ error?.message);
+          }
+          else{
+            alert('An unknown error occured.');
+          }
+        }
       }
       else{
         alert("Password should be 3 - 20 characters");
@@ -20,23 +38,11 @@ export function PasswordForm({ onSubmit, buttonText, isLoadingSignIn, isLoadingS
   };
 
   return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
+        <NavBar />
+        <div className="min-h-screen glass rounded-2xl shadow-lg flex items-center justify-center p-4">
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-                      <label className="block text-sm font-medium text-[#282828] mb-1">Email</label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#282828]/40" size={20} />
-                        <input
-                          id="email"
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/50 border border-white/20 focus:ring-2 focus:ring-[#FF0000] outline-none"
-                          placeholder="you@example.com"
-                          required
-                          disabled={isLoadingSignIn || isLoadingSignUp}
-                        />
-                      </div>
-                    </div>
+
                     <div>
                 <label className="block text-sm font-medium text-[#282828] mb-1">Password</label>
                 <div className="relative">
@@ -49,7 +55,6 @@ export function PasswordForm({ onSubmit, buttonText, isLoadingSignIn, isLoadingS
                     className="w-full pl-10 pr-12 py-2 rounded-lg bg-white/50 border border-white/20 focus:ring-2 focus:ring-[#FF0000] outline-none"
                     placeholder="••••••••"
                     required
-                    disabled={isLoadingSignIn || isLoadingSignUp}
                   />
                   <button
                     type="button"
@@ -59,30 +64,19 @@ export function PasswordForm({ onSubmit, buttonText, isLoadingSignIn, isLoadingS
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
-                {buttonText === 'Sign In' && (
-                  <button
-                    onClick={() => setAuthMethod('forgot')}
-                    className="text-[#FF0000] rounded-lg hover:opacity-90 transition-all duration-300 transform hover:scale-105 disabled:opacity-70 disabled:transform-none flex items-center justify-center"
-                    >
-                    Forgot Password?
-                  </button>
-                )}
               </div>
       <button
         type="submit"
-        disabled={isLoadingSignIn || isLoadingSignUp}
         className="w-full bg-[#FF0000] text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all duration-300 transform hover:scale-105 disabled:opacity-70 disabled:transform-none h-11 flex items-center justify-center"
       >
-        { buttonText==="Sign Up"? isLoadingSignUp ? (
+        { isLoading ? (
           <Spinner size="sm" className="mx-auto" />
         ) : (
-          buttonText
-        ): isLoadingSignIn ? (
-          <Spinner size="sm" className="mx-auto" />
-        ) : (
-          buttonText
+          "Confirm Password"
         )}
       </button>
     </form>
+    </div>
+    </div>
   );
 }

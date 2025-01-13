@@ -4,7 +4,7 @@ import { AuthCard } from './AuthCard';
 import { AuthButton } from './AuthButton';
 import { EmailForm } from './EmailForm';
 import { PasswordForm } from './PasswordForm';
-import {  useSignInEmailPassword, useSignInEmailPasswordless, useSignUpEmailPassword } from '@nhost/react'
+import {  useResetPassword, useSignInEmailPassword, useSignInEmailPasswordless, useSignUpEmailPassword } from '@nhost/react'
 import NavBar from '../NavBar';
 
 export function AuthPage() {
@@ -18,6 +18,7 @@ export function AuthPage() {
   const {
     signUpEmailPassword, isLoading:isLoadingSignUp
   } = useSignUpEmailPassword();
+  const { resetPassword, isLoading:isLoadingReset } = useResetPassword();
 
 
   const handleMagicSubmit = async (email) => {
@@ -51,7 +52,7 @@ export function AuthPage() {
     if(isSignUp===true){
       const {isSuccess, error} = await signUpEmailPassword(email, password);
 
-      if(error===null){
+      if(error===null || isSuccess===true){
         alert('Successfully created the account. Verify the email and you can proceed to Login');
         setAuthMethod('select')
       }
@@ -67,6 +68,26 @@ export function AuthPage() {
       }
     }
   };
+
+  const handleForgotPass = async (email) => {
+    const {isSent, error} = await resetPassword(email, {
+      redirectTo: 'https://yt-summariser.netlify.app/reset'
+    });
+
+    if(isSent===false){
+      if(error!==null){
+        alert("Error: " + error?.message);
+      }
+      else{
+        alert('An unknown error occured.');
+      }
+    }
+
+    else if(isSent){
+      alert("Check your email for reset link");
+      setAuthMethod('select');
+    }
+  }
 
   const renderAuthContent = () => {
     switch (authMethod) {
@@ -100,8 +121,17 @@ export function AuthPage() {
             buttonText={isSignUp ? "Sign Up" : "Sign In"}
             isLoadingSignIn={isLoadingSignIn}
             isLoadingSignUp={isLoadingSignUp}
+            setAuthMethod={setAuthMethod}
           />
         );
+        case 'forgot':
+          return (
+            <EmailForm
+              onSubmit={handleForgotPass}
+              buttonText="Send Reset Link"
+              isLoading={isLoadingReset}
+            />
+          );
     }
   };
 
