@@ -39,21 +39,31 @@ export function AuthPage() {
       const { isSuccess, error} = await signInEmailPassword(email, password);
 
       if(isSuccess===false){
-        alert(error?.message);
-        console.log(error);
+        if(error!==null){
+          alert(error?.message);
+          console.log(error);
+        }
+        else{
+          alert("An unknown error occured.");
+        }
       }
     }
     if(isSignUp===true){
       const {isSuccess, error} = await signUpEmailPassword(email, password);
 
-      if(isSuccess===true){
-        alert(error?.message);
-        console.log(error);
+      if(error===null){
+        alert('Successfully created the account. Verify the email and you can proceed to Login');
+        setAuthMethod('select')
       }
 
       else if(isSuccess===false){
-        alert('Successfully created the account. Verify the email and you can proceed to Login');
-        setAuthMethod('select')
+        if(error!==null){ 
+          alert(error?.message);
+          console.log(error);
+        }
+        else{
+          alert("An unknown error occured.");
+        }
       }
     }
   };
