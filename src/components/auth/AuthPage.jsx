@@ -144,6 +144,7 @@ export function AuthPage() {
         title={isSignUp ? "Create an account" : "Welcome back"}
         subtitle={isSignUp ? "Sign up to get started" : "Sign in to your account"}
       >
+        <p className='font-bold mb-5 text-center'>You can use <p className='text-[#FF0000] inline-flex'>test@gmail.com</p> and password: <p className='text-[#FF0000] inline-flex'>test1234</p></p>
         {authMethod !== 'select' && (
           <button
             onClick={() => setAuthMethod('select')}

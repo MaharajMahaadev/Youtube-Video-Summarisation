@@ -10,9 +10,35 @@ export function VideoSummaryPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [ ytSummary, setYtSummary] = useState('');
   const [url, setUrl] = useState('');
+  const [videoId, setVideoId] = useState('');
   const { signOut } = useSignOut();
   const accessToken = useAccessToken();
   const userId = useUserId();
+
+  useEffect(() => {
+    if (!url) {
+      setVideoId('');
+      return;
+    }
+
+    let id = '';
+    const patterns = [
+      /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([\w-]{11})(?:\S+)?/,
+      /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/shorts\/)([\w-]{11})/, // For YouTube Shorts
+      /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/live\/)([\w-]{11})/ // For YouTube Live URLs (can sometimes have a video ID)
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        id = match[1];
+        setVideoId(id);
+        break;
+      }
+    }
+    
+    console.log(videoId);
+  }, [url]);
 
   async function insertSummaries(){
     try{
@@ -45,13 +71,9 @@ export function VideoSummaryPage() {
     }
   }
 
-  const handleVideoSubmit = async (e) => {
-    e.preventDefault();
-    if (!url.trim()) return;
-
-    setIsLoading(true);
+   const handleAISummary = async (transcript) => {
     try {
-      const response = await fetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/v1/graphql', {
+      const response = await fetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/api/rest/processgemini', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -59,26 +81,74 @@ export function VideoSummaryPage() {
           'authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
-          "query": "mutation MyCustomActionMutation($arg1: SampleInput!){ actionName(arg1: $arg1) {message} }",
-          "variables": { "arg1":{"ytube": url}}
+              "input": {
+                  "contents": [
+                    {
+                      "parts": [
+                        {
+                          "text": transcript
+                        }
+                      ]
+                    }
+                  ]
+                }
         })
       });
 
       const result = await response.json();
 
-      if(result?.data?.actionName?.message==='AI model failed to run'){
-        alert('There was an error in processing, Please try again!');
+      if(!result?.actionGemini?.candidates[0]?.content?.parts[0]?.text){
+        alert('There was an error in creating the summary. Try again later!');
         return;
       }
 
-      else if(result?.data?.actionName?.message){
-        console.log(result?.data?.actionName?.message);
-        setYtSummary(result?.data?.actionName?.message);
+      else if(result?.actionGemini?.candidates[0]?.content?.parts[0]?.text){
+        setYtSummary(result?.actionGemini?.candidates[0]?.content?.parts[0]?.text);
+        return;
       }
 
       else{
-        alert('An Unknow error occured.')
-        throw new Error('Unknown error occured');
+        alert('An Unknow error occured while creating summary.')
+        throw new Error('Unknown error occured with summary');
+      }
+    } 
+    catch(err){
+      console.log(err);
+    }
+  };
+
+  const handleVideoSubmit = async (e) => {
+    e.preventDefault();
+    if (!videoId.trim()) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/api/rest/processtranscript', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-hasura-role': 'user',
+          'authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          "videoID": videoId
+        })
+      });
+
+      const result = await response.json();
+
+      if(result?.actionTranscript?.success===false){
+        alert('There was an error in transcripting the video. Try again later or with a different video!');
+        return;
+      }
+
+      else if(result?.actionTranscript?.success===true){
+        await handleAISummary(result?.actionTranscript?.transcript);
+      }
+
+      else{
+        alert('An Unknow error occured while transcripting.')
+        throw new Error('Unknown error occured transcripting');
       }
     } 
     catch(err){
@@ -126,7 +196,7 @@ export function VideoSummaryPage() {
       <nav className="glass fixed w-full z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2 text-[#FF0000] hover:opacity-80 transition-opacity">
-            <Youtube size={24} />
+            <svg width="24px" height="24px" viewBox="0 -3 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>youtube [#ff0000168]</title> <desc>Created with Sketch.</desc> <defs> </defs> <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g id="Dribbble-Light-Preview" transform="translate(-300.000000, -7442.000000)" fill="#ff0000"> <g id="icons" transform="translate(56.000000, 160.000000)"> <path d="M251.988432,7291.58588 L251.988432,7285.97425 C253.980638,7286.91168 255.523602,7287.8172 257.348463,7288.79353 C255.843351,7289.62824 253.980638,7290.56468 251.988432,7291.58588 M263.090998,7283.18289 C262.747343,7282.73013 262.161634,7282.37809 261.538073,7282.26141 C259.705243,7281.91336 248.270974,7281.91237 246.439141,7282.26141 C245.939097,7282.35515 245.493839,7282.58153 245.111335,7282.93357 C243.49964,7284.42947 244.004664,7292.45151 244.393145,7293.75096 C244.556505,7294.31342 244.767679,7294.71931 245.033639,7294.98558 C245.376298,7295.33761 245.845463,7295.57995 246.384355,7295.68865 C247.893451,7296.0008 255.668037,7296.17532 261.506198,7295.73552 C262.044094,7295.64178 262.520231,7295.39147 262.895762,7295.02447 C264.385932,7293.53455 264.28433,7285.06174 263.090998,7283.18289" id="youtube-[#ff0000168]"> </path> </g> </g> </g> </g></svg>
           </a>
           <div className="flex items-center gap-4">
             <button
