@@ -86,7 +86,7 @@ export function VideoSummaryPage() {
                     {
                       "parts": [
                         {
-                          "text": transcript
+                          "text": "Please analyze the transcript of the youtube video and create a structured summary following these guidelines: Break down the content into main topics using numbers. Do not use any markdown feautes. Do not use highlight, bold, italics or anything. Only use numbers like 1. or for smaller point 1.2 etc. Please provide a clear, structured summary that captures the core concepts while maintaining accuracy. Transcript: " + transcript
                         }
                       ]
                     }

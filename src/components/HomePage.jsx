@@ -60,7 +60,7 @@ export function HomePage() {
 
       <footer className="glass">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-center">
-          <p className="text-[#282828]/70">Created by Maharaj Mahaadev for Subspace</p>
+          <p className="text-[#282828]/70">Created by Maharaj Mahaadev</p>
         </div>
       </footer>
     </div>
