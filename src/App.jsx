@@ -1,28 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { HomePage } from './components/HomePage';
 import { AuthPage } from './components/auth/AuthPage.jsx';
 import { VideoSummaryPage } from './components/VideoSummaryPage.jsx';
 import { ResetPassword } from './components/auth/ResetPassword.jsx'
-import { NhostProvider, SignedIn } from '@nhost/react';
-import { nhost } from './lib/host.ts'
-import { NhostApolloProvider } from '@nhost/react-apollo';
+import { AuthProvider, useAuth } from './lib/AuthContext.jsx';
 
-export default function App() {
-
-  const [session, setSession] = useState(null)
-
-  useEffect(() => {
-    setSession(nhost.auth.getSession())
-
-    nhost.auth.onAuthStateChanged((_, session) => {
-      setSession(session)
-    })
-  }, []);
-
+function AppRoutes() {
+  const { session, isLoading } = useAuth();
+  if (isLoading) return null;
   return (
-    <NhostApolloProvider nhost={nhost}>
-    <NhostProvider nhost={nhost}>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -36,14 +23,12 @@ export default function App() {
             <Navigate to="/auth" replace /> : 
             <VideoSummaryPage />
         } />
-        <Route path="/reset" element={
-          <SignedIn>
-            <ResetPassword />
-          </SignedIn>
-        } />
+        <Route path="/reset" element={session ? <ResetPassword /> : <Navigate to="/auth" replace />} />
       </Routes>
     </BrowserRouter>
-  </NhostProvider>
-  </NhostApolloProvider>
   );
+}
+
+export default function App() {
+  return <AuthProvider><AppRoutes /></AuthProvider>;
 }

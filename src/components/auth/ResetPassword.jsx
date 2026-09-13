@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
 import NavBar from '../NavBar.jsx'
-import { useChangePassword } from '@nhost/react';
-import { useNavigate } from 'react-router-dom';
+import { nhost } from '../../lib/host.ts';
+import { useNavigate } from 'react-router';
 
 export function ResetPassword() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { changePassword, isLoading } = useChangePassword();
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -16,19 +16,15 @@ export function ResetPassword() {
     e.preventDefault();
     if (password.trim()) {
       if(password.length>2 && password.length<21){
-        const {isSuccess, error} = await changePassword(password);
-
-        if(isSuccess===true){
-          alert("Password sucessfully changed");
-          navigate('/dashboard');
-        }
-        else if(isSuccess===false){
-          if(error!==null){
-            alert('Error: '+ error?.message);
-          }
-          else{
-            alert('An unknown error occured.');
-          }
+        setIsLoading(true);
+        try {
+          await nhost.auth.changeUserPassword({ newPassword: password });
+          alert('Password changed. Please sign in again.');
+          navigate('/auth');
+        } catch (error) {
+          alert('Error: ' + error.message);
+        } finally {
+          setIsLoading(false);
         }
       }
       else{

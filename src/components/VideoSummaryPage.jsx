@@ -1,7 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { History, LogOut, Youtube, Send, X } from 'lucide-react';
+import { History, LogOut, Send, X } from 'lucide-react';
 import { Spinner } from './ui/Spinner.jsx';
-import { SignedIn, useAccessToken, useSignOut, useUserId } from '@nhost/react';
+import { nhost } from '../lib/host.ts';
+import { useAuth } from '../lib/AuthContext.jsx';
+
+async function authenticatedFetch(url, options) {
+  const session = await nhost.refreshSession(60);
+  if (!session) throw new Error('Your session has expired. Please sign in again.');
+
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      authorization: `Bearer ${session.accessToken}`,
+    },
+  });
+}
 
 export function VideoSummaryPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -11,9 +25,18 @@ export function VideoSummaryPage() {
   const [ ytSummary, setYtSummary] = useState('');
   const [url, setUrl] = useState('');
   const [videoId, setVideoId] = useState('');
-  const { signOut } = useSignOut();
-  const accessToken = useAccessToken();
-  const userId = useUserId();
+  const { session } = useAuth();
+  const userId = session?.user?.id;
+
+  const signOut = async () => {
+    try {
+      await nhost.auth.signOut({ refreshToken: session?.refreshToken });
+    } catch (error) {
+      console.error('Could not revoke session:', error);
+    } finally {
+      nhost.clearSession();
+    }
+  };
 
   useEffect(() => {
     if (!url) {
@@ -42,12 +65,11 @@ export function VideoSummaryPage() {
 
   async function insertSummaries(){
     try{
-      const res = await fetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/api/rest/summaries', {
+      const res = await authenticatedFetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/api/rest/summaries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-hasura-role': 'user',
-          'authorization': `Bearer ${accessToken}`
+          'x-hasura-role': 'user'
         },
         body: JSON.stringify({
           "object":{
@@ -73,12 +95,11 @@ export function VideoSummaryPage() {
 
    const handleAISummary = async (transcript) => {
     try {
-      const response = await fetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/api/rest/processgemini', {
+      const response = await authenticatedFetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/api/rest/processgemini', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-hasura-role': 'user',
-          'authorization': `Bearer ${accessToken}`
+          'x-hasura-role': 'user'
         },
         body: JSON.stringify({
               "input": {
@@ -123,12 +144,11 @@ export function VideoSummaryPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/api/rest/processtranscript', {
+      const response = await authenticatedFetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/api/rest/processtranscript', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-hasura-role': 'user',
-          'authorization': `Bearer ${accessToken}`
+          'x-hasura-role': 'user'
         },
         body: JSON.stringify({
           "videoID": videoId
@@ -168,12 +188,11 @@ export function VideoSummaryPage() {
   async function getSummaries(){
     if(summaries.length===0){
       try{
-      const res = await fetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/api/rest/summaries', {
+      const res = await authenticatedFetch('https://wjrjdxentwfwpiqnwlph.hasura.ap-south-1.nhost.run/api/rest/summaries', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'x-hasura-role': 'user',
-          'authorization': `Bearer ${accessToken}`
+          'x-hasura-role': 'user'
         }
       });
 
@@ -191,7 +210,6 @@ export function VideoSummaryPage() {
   }, [isSidebarOpen]);
 
   return (
-    <SignedIn>
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
       <nav className="glass fixed w-full z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -297,6 +315,5 @@ export function VideoSummaryPage() {
         </div>
       </div>
     </div>
-    </SignedIn>
   );
 }

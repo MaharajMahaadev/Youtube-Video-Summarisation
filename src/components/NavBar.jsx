@@ -1,6 +1,5 @@
-import { Youtube } from "lucide-react";
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 export default function NavBar(){
     const navigate = useNavigate();

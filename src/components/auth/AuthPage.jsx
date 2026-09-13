@@ -4,90 +4,62 @@ import { AuthCard } from './AuthCard';
 import { AuthButton } from './AuthButton';
 import { EmailForm } from './EmailForm';
 import { PasswordForm } from './PasswordForm';
-import {  useResetPassword, useSignInEmailPassword, useSignInEmailPasswordless, useSignUpEmailPassword } from '@nhost/react'
+import { nhost } from '../../lib/host.ts';
 import NavBar from '../NavBar';
 
 export function AuthPage() {
   const [authMethod, setAuthMethod] = useState('select');
   const [isSignUp, setIsSignUp] = useState(false);
-
-  const { signInEmailPasswordless, isLoading } = useSignInEmailPasswordless();
-  const {
-    signInEmailPassword, isLoading:isLoadingSignIn, 
-  } = useSignInEmailPassword();
-  const {
-    signUpEmailPassword, isLoading:isLoadingSignUp
-  } = useSignUpEmailPassword();
-  const { resetPassword, isLoading:isLoadingReset } = useResetPassword();
-
+  const [loadingAction, setLoadingAction] = useState(null);
 
   const handleMagicSubmit = async (email) => {
-    console.log('Magic link:', email);
-
-    const {isSuccess, error } = await signInEmailPasswordless(email)
-    if(isSuccess===false){
-      alert("Sorry couldn't send link." + error?.message);
-    }
-    else if(isSuccess===true){
-      alert('Magic Link Sent to your email!')
-      setAuthMethod('select')
+    setLoadingAction('magic');
+    try {
+      await nhost.auth.signInPasswordlessEmail({ email });
+      alert('Magic Link Sent to your email!');
+      setAuthMethod('select');
+    } catch (error) {
+      alert("Sorry couldn't send link. " + error.message);
+    } finally {
+      setLoadingAction(null);
     }
   };
 
   const handlePasswordSubmit = async (email, password) => {
-
-    if(isSignUp===false){
-      const { isSuccess, error} = await signInEmailPassword(email, password);
-
-      if(isSuccess===false){
-        if(error!==null){
-          alert(error?.message);
-          console.log(error);
+    setLoadingAction(isSignUp ? 'signup' : 'signin');
+    try {
+      if (isSignUp) {
+        const response = await nhost.auth.signUpEmailPassword({ email, password });
+        if (!response.body?.session) {
+          alert('Successfully created the account. Verify the email and you can proceed to Login');
+          setAuthMethod('select');
         }
-        else{
-          alert("An unknown error occured.");
-        }
+      } else {
+        const response = await nhost.auth.signInEmailPassword({ email, password });
+        if (!response.body?.session) alert('Additional verification is required to sign in.');
       }
-    }
-    if(isSignUp===true){
-      const {isSuccess, error} = await signUpEmailPassword(email, password);
-
-      if(error===null || isSuccess===true){
-        alert('Successfully created the account. Verify the email and you can proceed to Login');
-        setAuthMethod('select')
-      }
-
-      else if(isSuccess===false){
-        if(error!==null){ 
-          alert(error?.message);
-          console.log(error);
-        }
-        else{
-          alert("An unknown error occured.");
-        }
-      }
+    } catch (error) {
+      alert(error.message || 'An unknown error occurred.');
+    } finally {
+      setLoadingAction(null);
     }
   };
 
   const handleForgotPass = async (email) => {
-    const {isSent, error} = await resetPassword(email, {
-      redirectTo: 'https://yt-summariser.netlify.app/reset'
-    });
-
-    if(isSent===false){
-      if(error!==null){
-        alert("Error: " + error?.message);
-      }
-      else{
-        alert('An unknown error occured.');
-      }
-    }
-
-    else if(isSent){
+    setLoadingAction('reset');
+    try {
+      await nhost.auth.sendPasswordResetEmail({
+        email,
+        options: { redirectTo: 'https://yt-summariser.netlify.app/reset' },
+      });
       alert("Check your email for reset link");
       setAuthMethod('select');
+    } catch (error) {
+      alert('Error: ' + error.message);
+    } finally {
+      setLoadingAction(null);
     }
-  }
+  };
 
   const renderAuthContent = () => {
     switch (authMethod) {
@@ -111,7 +83,7 @@ export function AuthPage() {
           <EmailForm
             onSubmit={handleMagicSubmit}
             buttonText="Send Magic Link"
-            isLoading={isLoading}
+            isLoading={loadingAction === 'magic'}
           />
         );
       case 'password':
@@ -119,8 +91,8 @@ export function AuthPage() {
           <PasswordForm
             onSubmit={handlePasswordSubmit}
             buttonText={isSignUp ? "Sign Up" : "Sign In"}
-            isLoadingSignIn={isLoadingSignIn}
-            isLoadingSignUp={isLoadingSignUp}
+            isLoadingSignIn={loadingAction === 'signin'}
+            isLoadingSignUp={loadingAction === 'signup'}
             setAuthMethod={setAuthMethod}
           />
         );
@@ -129,7 +101,7 @@ export function AuthPage() {
             <EmailForm
               onSubmit={handleForgotPass}
               buttonText="Send Reset Link"
-              isLoading={isLoadingReset}
+              isLoading={loadingAction === 'reset'}
             />
           );
     }

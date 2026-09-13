@@ -1,6 +1,6 @@
 import React from 'react';
 import { Video, Brain, FileText, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import NavBar from './NavBar';
 
 export function HomePage() {
